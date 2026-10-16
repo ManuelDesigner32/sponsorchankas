@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Fotos - Sponsors Los Chankas</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+        h1 {
+            color: #8c1c13; /* Color de ejemplo, puedes poner el guinda de Los Chankas */
+            text-align: center;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .btn {
+            background-color: #8c1c13;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 0;
+            width: 100%;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #6a150f;
+        }
+        .btn-upload {
+            background-color: #333;
+        }
+        .btn-upload:hover {
+            background-color: #555;
+        }
+        canvas {
+            max-width: 100%;
+            height: auto;
+            margin-top: 20px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Sponsors Los Chankas</h1>
+        <p>Sube una foto vertical para aplicar el cintillo automáticamente.</p>
+        
+        <label class="btn btn-upload">
+            Seleccionar Foto
+            <input type="file" id="upload" accept="image/png, image/jpeg, image/jpg">
+        </label>
+        
+        <canvas id="canvas"></canvas>
+        
+        <button id="downloadBtn" class="btn" style="display: none;">Descargar Foto Final</button>
+    </div>
+
+    <script>
+        const upload = document.getElementById('upload');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        // Nombre de tu plantilla de sponsor
+        const templateSrc = 'plantilla-sponsor-vertical.png';
+
+        let uploadedImage = new Image();
+        let templateImage = new Image();
+
+        // Precargar la plantilla
+        templateImage.src = templateSrc;
+
+        upload.addEventListener('change', function(e) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                uploadedImage.onload = function() {
+                    generarImagen();
+                }
+                uploadedImage.src = event.target.result;
+            }
+            if(e.target.files[0]) {
+                reader.readAsDataURL(e.target.files[0]);
+            }
+        });
+
+        function generarImagen() {
+            // Configurar el canvas con el tamaño de la foto original
+            canvas.width = uploadedImage.width;
+            canvas.height = uploadedImage.height;
+
+            // Dibujar la foto de fondo
+            ctx.drawImage(uploadedImage, 0, 0);
+
+            // Calcular proporciones del cintillo
+            // El cintillo ocupará el 100% del ancho de la foto
+            const templateWidth = canvas.width;
+            const templateRatio = templateImage.height / templateImage.width;
+            const templateHeight = templateWidth * templateRatio;
+
+            // Posicionar el cintillo en la parte inferior
+            const yPosition = canvas.height - templateHeight;
+
+            // Dibujar el cintillo sobre la foto
+            ctx.drawImage(templateImage, 0, yPosition, templateWidth, templateHeight);
+
+            // Mostrar el canvas y el botón de descarga
+            canvas.style.display = 'block';
+            downloadBtn.style.display = 'block';
+        }
+
+        downloadBtn.addEventListener('click', function() {
+            const link = document.createElement('a');
+            link.download = 'foto-sponsor-chankas.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+    </script>
+
+</body>
+</html>
