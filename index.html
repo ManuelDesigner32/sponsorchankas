@@ -23,7 +23,7 @@
             padding: 30px;
             border-radius: 10px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            max-width: 800px; /* Más ancho para que entren las miniaturas */
+            max-width: 800px;
             width: 100%;
             text-align: center;
         }
@@ -51,7 +51,6 @@
         .btn-upload:hover {
             background-color: #555;
         }
-        /* Estilos para la galería de fotos generadas */
         #previewContainer {
             display: flex;
             flex-wrap: wrap;
@@ -78,7 +77,6 @@
         <h1>Sponsors Los Chankas</h1>
         <p>Sube varias fotos a la vez para aplicarles el cintillo.</p>
         
-        <!-- Ahora el input tiene la propiedad "multiple" -->
         <label class="btn btn-upload">
             Seleccionar Múltiples Fotos
             <input type="file" id="upload" accept="image/png, image/jpeg, image/jpg" multiple>
@@ -86,7 +84,6 @@
         
         <button id="downloadBtn" class="btn" style="display: none;">Descargar Todas (Individualmente)</button>
         
-        <!-- Aquí aparecerán las miniaturas de todas las fotos procesadas -->
         <div id="previewContainer"></div>
     </div>
 
@@ -97,30 +94,44 @@
 
         const templateSrc = 'plantilla-sponsor-vertical.png';
         let templateImage = new Image();
+        let templateCargada = false;
+
+        // Validar si la plantilla existe y carga correctamente
+        templateImage.onload = function() {
+            templateCargada = true;
+        };
+        templateImage.onerror = function() {
+            alert("⚠️ ERROR: No se puede encontrar el archivo 'plantilla-sponsor-vertical.png'. Revisa que el nombre sea EXACTAMENTE igual (letras minúsculas) y que esté subido en GitHub.");
+        };
         templateImage.src = templateSrc;
 
-        // Array para guardar todas las fotos generadas
         let generatedCanvases = [];
 
         upload.addEventListener('change', function(e) {
-            // Limpiar todo si el usuario sube un nuevo lote de fotos
+            if (!templateCargada) {
+                alert("Espera un momento, la plantilla del sponsor no ha cargado correctamente o no existe.");
+                return;
+            }
+
             previewContainer.innerHTML = '';
             generatedCanvases = [];
             const files = e.target.files;
 
-            if (files.length > 0) {
-                downloadBtn.style.display = 'block';
-            } else {
-                downloadBtn.style.display = 'none';
-            }
+            if (files.length === 0) return;
+            
+            downloadBtn.style.display = 'block';
 
-            // Procesar cada archivo seleccionado
             Array.from(files).forEach((file, index) => {
                 const reader = new FileReader();
                 reader.onload = function(event) {
                     let uploadedImage = new Image();
                     uploadedImage.onload = function() {
-                        generarImagen(uploadedImage, file.name);
+                        try {
+                            generarImagen(uploadedImage, file.name);
+                        } catch (error) {
+                            console.error("Error al procesar la imagen:", error);
+                            alert("Hubo un error procesando la imagen: " + file.name);
+                        }
                     }
                     uploadedImage.src = event.target.result;
                 }
@@ -132,4 +143,38 @@
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
 
-            canvas.width = img
+            canvas.width = img.width;
+            canvas.height = img.height;
+
+            ctx.drawImage(img, 0, 0);
+
+            const templateWidth = canvas.width;
+            const templateRatio = templateImage.height / templateImage.width;
+            const templateHeight = templateWidth * templateRatio;
+            const yPosition = canvas.height - templateHeight;
+
+            ctx.drawImage(templateImage, 0, yPosition, templateWidth, templateHeight);
+
+            canvas.dataset.filename = 'sponsor_' + originalName.replace(/\.[^/.]+$/, "") + '.png';
+            generatedCanvases.push(canvas);
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'canvas-wrapper';
+            wrapper.appendChild(canvas);
+            previewContainer.appendChild(wrapper);
+        }
+
+        downloadBtn.addEventListener('click', function() {
+            generatedCanvases.forEach((canvas, index) => {
+                setTimeout(() => {
+                    const link = document.createElement('a');
+                    link.download = canvas.dataset.filename;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                }, index * 400); 
+            });
+        });
+    </script>
+
+</body>
+</html>
